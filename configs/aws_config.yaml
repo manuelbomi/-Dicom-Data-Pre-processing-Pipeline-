@@ -1,0 +1,78 @@
+# AWS Deployment Configuration
+# =============================
+# Settings for S3 data access and SageMaker integration.
+
+aws:
+  region: us-east-1
+  profile: null  # Use default credentials chain
+
+s3:
+  # Source DICOM data
+  source:
+    bucket: clinical-imaging-archive
+    prefix: screening-mammography/
+    max_concurrent_requests: 64
+    multipart_threshold_mb: 64
+    multipart_chunksize_mb: 16
+    max_retries: 3
+    connect_timeout_sec: 10
+    read_timeout_sec: 60
+    use_accelerate: false
+
+  # Output processed dataset
+  destination:
+    bucket: ml-training-datasets
+    prefix: mammography/v2/
+    storage_class: INTELLIGENT_TIERING
+    server_side_encryption: AES256
+    kms_key_id: ""
+
+  # Staging (temporary local cache for processing)
+  staging:
+    local_dir: /tmp/dicom-staging
+    max_size_gb: 200
+    cleanup_on_complete: true
+
+# SageMaker integration
+sagemaker:
+  # Training job settings
+  training:
+    role_arn: arn:aws:iam::123456789012:role/SageMakerExecutionRole
+    instance_type: ml.p3.8xlarge
+    instance_count: 1
+    volume_size_gb: 500
+
+  # Data channel configuration
+  data_channels:
+    train:
+      s3_uri: s3://ml-training-datasets/mammography/v2/train/
+      distribution: ShardedByS3Key
+      content_type: application/x-npy
+    validation:
+      s3_uri: s3://ml-training-datasets/mammography/v2/val/
+      distribution: FullyReplicated
+      content_type: application/x-npy
+
+  # Manifest file
+  manifest:
+    output_key: mammography/v2/manifest.json
+    content_type: application/json
+
+# CloudWatch monitoring
+monitoring:
+  enabled: true
+  namespace: DicomPipeline
+  metrics_interval_sec: 60
+  alarms:
+    - metric: pipeline.error_rate
+      threshold: 0.05
+      comparison: GreaterThanThreshold
+      period_sec: 300
+      evaluation_periods: 2
+
+# Resource tagging
+tags:
+  project: mammography-ai
+  environment: production
+  team: medical-imaging
+  cost_center: ML-R&D

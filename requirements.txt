@@ -1,0 +1,36 @@
+# Core
+pydicom>=2.4.0
+numpy>=1.24.0
+opencv-python-headless>=4.8.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Data formats
+h5py>=3.9.0
+lmdb>=1.4.0
+webdataset>=0.2.48
+
+# AWS
+boto3>=1.28.0
+botocore>=1.31.0
+
+# Configuration & CLI
+pyyaml>=6.0
+click>=8.1.0
+
+# Visualization & reporting
+matplotlib>=3.7.0
+
+# Distributed computing (optional)
+# dask[distributed]>=2023.8.0
+
+# Development & testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.7.0
+ruff>=0.0.280
+mypy>=1.5.0
+
+# Utilities
+tqdm>=4.65.0
+pandas>=2.0.0

@@ -1,0 +1,174 @@
+# Mammography Processing Pipeline Configuration
+# ==============================================
+# Full configuration for processing screening mammography DICOM files
+# into ML-ready datasets for breast cancer detection models.
+
+pipeline:
+  name: mammography_screening_v2
+  description: "End-to-end mammography preprocessing for cancer detection ML"
+  version: "2.0.0"
+
+  # Checkpoint and resume
+  checkpoint_dir: "/tmp/pipeline_checkpoints/mammography"
+  checkpoint_interval: 500  # Save every 500 samples
+
+  # Stage definitions
+  stages:
+    - name: scan
+      enabled: true
+      depends_on: []
+      config:
+        max_workers: 16
+        chunk_size: 500
+        dedup_by_sop: true
+        modality_filter: ["MG"]
+        min_file_size: 1024
+        extensions: [".dcm", ".dicom", ""]
+
+    - name: validate
+      enabled: true
+      depends_on: [scan]
+      config:
+        check_pixel_data: true
+        strict_mode: false
+        max_pixel_value_check: true
+        reject_on_warning: false
+        required_tags:
+          - PatientID
+          - StudyInstanceUID
+          - SeriesInstanceUID
+          - SOPInstanceUID
+          - Modality
+          - Rows
+          - Columns
+          - BitsAllocated
+          - BitsStored
+          - PhotometricInterpretation
+          - ImageLaterality
+          - ViewPosition
+
+    - name: extract_metadata
+      enabled: true
+      depends_on: [validate]
+      config:
+        extract_private_tags: true
+        normalize_dates: true
+        compute_derived: true
+
+    - name: pixel_processing
+      enabled: true
+      depends_on: [extract_metadata]
+      config:
+        apply_modality_lut: true
+        apply_voi_lut: true
+        target_photometric: MONOCHROME2
+        normalization: percentile
+        percentile_low: 0.5
+        percentile_high: 99.5
+        output_dtype: float32
+        apply_manufacturer_corrections: true
+
+    - name: mammography_processing
+      enabled: true
+      depends_on: [pixel_processing]
+      config:
+        target_orientation: left
+        auto_detect_orientation: true
+        breast_threshold_method: otsu
+        breast_min_area_fraction: 0.05
+        morphology_kernel_size: 25
+        remove_artifacts: true
+        pectoral_removal_enabled: true
+        pectoral_margin_pixels: 10
+        clahe_enabled: true
+        clahe_clip_limit: 2.0
+        clahe_grid_size: [8, 8]
+        implant_detection_enabled: true
+        crop_to_breast: true
+        padding_pixels: 10
+
+    - name: image_transforms
+      enabled: true
+      depends_on: [mammography_processing]
+      config:
+        transforms:
+          - name: ResizeWithPad
+            params:
+              target_size: [2048, 1024]
+              fill_value: 0.0
+          - name: IntensityNormalize
+            params:
+              method: percentile
+              percentile_low: 1.0
+              percentile_high: 99.0
+          - name: AddChannelDim
+            params: {}
+          - name: ToTensor
+            params: {}
+
+    - name: quality_check
+      enabled: true
+      depends_on: [image_transforms]
+      config:
+        outlier_method: iqr
+        completeness_threshold: 0.95
+        generate_report: true
+        report_output: "./reports/quality_report.html"
+
+    - name: write_dataset
+      enabled: true
+      depends_on: [quality_check]
+      config:
+        format: webdataset
+        output_dir: "./output/mammography_dataset"
+        shard_size_mb: 256
+        shard_max_samples: 1000
+        shard_prefix: mammography
+        compression: gzip
+        image_format: npy
+        write_manifest: true
+
+# Execution settings
+execution:
+  backend: multiprocess  # local, multiprocess, dask
+  n_workers: 8
+  memory_limit_per_worker: "4GB"
+  threads_per_worker: 1
+  timeout_per_task_sec: 300
+  max_retries: 2
+  prefetch_factor: 2
+
+  # Dask settings (used when backend=dask)
+  dask:
+    scheduler_address: null  # null = local cluster
+    dashboard_port: 8787
+    worker_space: "/tmp/dask-worker-space"
+    memory_target: 0.6
+    memory_spill: 0.7
+    memory_pause: 0.8
+
+# Logging
+logging:
+  level: INFO
+  structured: false
+  log_file: "./logs/pipeline.log"
+  service_name: mammography-pipeline
+
+# Quality thresholds
+quality:
+  min_image_dimension: 256
+  max_image_dimension: 8192
+  min_breast_area_fraction: 0.05
+  max_outlier_fraction: 0.05
+  min_metadata_completeness: 0.90
+  max_class_imbalance_ratio: 20.0
+
+# Dataset split (if applicable)
+split:
+  enabled: false
+  method: patient_level  # patient_level, study_level, random
+  train_fraction: 0.7
+  val_fraction: 0.15
+  test_fraction: 0.15
+  random_seed: 42
+  stratify_by: label

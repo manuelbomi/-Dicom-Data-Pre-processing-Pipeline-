@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Data (do not commit medical data)
+data/
+*.dcm
+*.dicom
+*.h5
+*.hdf5
+*.lmdb
+*.tar
+*.npy
+*.npz
+
+# Pipeline outputs
+output/
+checkpoints/
+logs/
+reports/
+*.pkl
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# AWS credentials (NEVER commit)
+.aws/
+*.pem
+.env
+.env.local
+
+# Benchmark results (generated)
+benchmark_results.json
+pipeline_metrics.json
