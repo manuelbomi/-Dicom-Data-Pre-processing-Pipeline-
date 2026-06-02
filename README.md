@@ -276,8 +276,8 @@ If you use this pipeline in your research, please cite:
 ```bibtex
 @software{dicom_processing_pipeline,
   title={Scalable DICOM Processing Pipeline for Medical Imaging ML Workflows},
-  author={Manuel},
-  year={2026},
+  author={Emmanuel Oyekanlu},
+  year={2021},
   url={https://github.com/manuelbomi/dicom-processing-pipeline}
 }
 ```
