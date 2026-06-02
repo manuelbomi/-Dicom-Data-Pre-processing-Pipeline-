@@ -278,6 +278,6 @@ If you use this pipeline in your research, please cite:
   title={Scalable DICOM Processing Pipeline for Medical Imaging ML Workflows},
   author={Manuel},
   year={2026},
-  url={https://github.com/yourusername/dicom-processing-pipeline}
+  url={https://github.com/manuelbomi/dicom-processing-pipeline}
 }
 ```
