@@ -132,7 +132,7 @@ for dicom_stream in store.iter_dicom_files(max_concurrent=64):
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/dicom-processing-pipeline.git
+git clone https://github.com/manuelbomi/dicom-processing-pipeline.git
 cd dicom-processing-pipeline
 
 # Create virtual environment
